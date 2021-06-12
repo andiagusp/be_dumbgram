@@ -62,9 +62,11 @@ const registerUser = async (req, res) => {
     res.status(200).send({
       status: 'success',
       data: {
-        fullName: dataUser.fullName,
-        username: dataUser.username,
-        token
+        user: {
+          fullName: dataUser.fullName,
+          username: dataUser.username,
+          token
+        }
       }
     })
   } catch (error) {
