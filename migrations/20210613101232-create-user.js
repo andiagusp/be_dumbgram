@@ -8,21 +8,21 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      fullName: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
       email: {
         allowNull: false,
-        type: Sequelize.STRING(128)
+        type: Sequelize.STRING
       },
       username: {
         allowNull: false,
-        type: Sequelize.STRING(128)
+        type: Sequelize.STRING
       },
       password: {
         allowNull: false,
         type: Sequelize.STRING
-      },
-      fullName: {
-        allowNull: false,
-        type: Sequelize.STRING(128)
       },
       image: {
         type: Sequelize.STRING
@@ -39,7 +39,6 @@ module.exports = {
         type: Sequelize.DATE
       }
     });
-
   },
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('users');
