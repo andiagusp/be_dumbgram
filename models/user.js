@@ -23,6 +23,18 @@ module.exports = (sequelize, DataTypes) => {
           name: 'followingId'
         }
       })
+      user.hasMany(models.feed, {
+        as: 'feed',
+        foreignKey: {
+          name: 'userId'
+        }
+      })
+      user.hasMany(models.comment, {
+        as: 'comment',
+        foreignKey: {
+          name: 'userId'
+        }
+      })
     }
   };
   user.init({

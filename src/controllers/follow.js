@@ -6,7 +6,7 @@ const getFollower = async (req, res) => {
     const { id } = req.params
     const account = await user.findOne({ where: { id: id } })
     if (!account) {
-      res.status(404).send({
+      return res.status(404).send({
         status: 'failed',
         message: 'user not found'
       })
@@ -46,7 +46,7 @@ const getFollowing = async (req, res) => {
     const { id } = req.params
     const account = await user.findOne({ where: { id: id } })
     if (!account) {
-      res.status(404).send({
+      return res.status(404).send({
         status: 'failed',
         message: 'user not found'
       })
