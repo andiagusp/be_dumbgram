@@ -47,7 +47,7 @@ const updateUser = async (req, res) => {
     const detailUser = await user.findOne({ where: { id } })
     const cekUsername = await user.findAll({
       attributes: ['id', 'username'],
-      where: { username: data.username }
+      where: { username: detailUser.username }
     })
     const filterUsername = cekUsername.filter((user) => {
       if (user.username === data.username) {
@@ -56,7 +56,6 @@ const updateUser = async (req, res) => {
         }
       }
     })
-    console.log(filterUsername.length)
     if (!detailUser) {
       return res.status(400).send({
         status: 'failed',
@@ -70,10 +69,13 @@ const updateUser = async (req, res) => {
         message: 'username already use'
       })
     }
-
+    if (data.username === '' || data.fullName === '') {
+      return res.status(400).send({
+        status: 'failed',
+        message: 'username empty'
+      })
+    }
     const schema = Joi.object({
-      fullName: Joi.string().required().min(4),
-      username: Joi.string().required().min(4),
       image: Joi.string(),
       bio: Joi.string()
     })

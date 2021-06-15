@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class feed extends Model {
+  class message extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,28 +11,27 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      feed.belongsTo(models.user, {
-        as: 'user',
+      message.belongsTo(models.user, {
+        as: 'sender',
         foreignKey: {
-          name: 'userId'
+          name: 'senderMessageId'
         }
       })
-      feed.hasMany(models.comment, {
-        as: 'comment',
+      message.belongsTo(models.user, {
+        as: 'receiver',
         foreignKey: {
-          name: 'feedId'
+          name: 'receiverMessageId'
         }
       })
     }
   };
-  feed.init({
-    fileName: DataTypes.STRING,
-    like: DataTypes.BIGINT,
-    caption: DataTypes.TEXT,
-    userId: DataTypes.INTEGER
+  message.init({
+    message: DataTypes.TEXT,
+    senderMessageId: DataTypes.INTEGER,
+    receiverMessageId: DataTypes.INTEGER
   }, {
     sequelize,
-    modelName: 'feed',
+    modelName: 'message',
   });
-  return feed;
+  return message;
 };

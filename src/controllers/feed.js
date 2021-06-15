@@ -1,5 +1,6 @@
 const { feed, user, follow } = require('../../models')
 const Joi = require('joi')
+
 const except = ['createdAt', 'updatedAt', 'userId']
 
 const addFeed = async (req, res) => {
@@ -56,40 +57,38 @@ const getFeedByFollow = async (req, res) => {
     const { id } = req.params
     const checkAccountPeople = await user.findOne({ where: { id: id } })
     if (!checkAccountPeople) {
-      res.status(404).send({
+      return res.status(404).send({
         status: 'failed',
         message: 'user not found'
       })
     }
 
-    const cekFollow = await feed.findAll({
-      where: {
-        userId: id
-      },
-      attributes : {
-        exclude: except
-      },
-      include: {
-        model: user,
-        as: 'user',
-        attributes : {
-          exclude: [...except, 'password', 'bio', 'email']
-        },
-        include: {
-          model: follow,
-          as: 'follower',
-          where: {
-            followingId: idUser
-          },
-          attributes: []
-        }
-      }
+    const getFollowing = await follow.findAll({
+      attributes: ['followingId'],
+      where: { followerId: idUser }
     })
+
+    const following = getFollowing.map(f => f.followingId)
+    const feedFollow = []
+    for (const userID of following) {
+      const follow = await feed.findAll({
+        where: {
+          userId: userID
+        },
+        attributes: ['id', 'fileName', 'like', 'caption'],
+        include: {
+          model: user,
+          as: 'user',
+          attributes: ['id', 'fullName', 'username', 'image']
+        }
+      })
+      feedFollow.push(...follow)
+    }
 
     res.status(200).send({
       status: 'success',
       data: {
-        feed: cekFollow
+        feeds: feedFollow
       }
     })
   } catch (error) {
@@ -104,22 +103,20 @@ const getFeedByFollow = async (req, res) => {
 const getAllFeed = async (req, res) => {
   try {
     const allFeeds = await feed.findAll({
+      attributes: ['id', 'fileName', 'like', 'caption'],
       include: {
         model: user,
         as: 'user',
         attributes: ['id', 'fullName', 'username', 'image']
-      },
-      attributes: {
-        exclude: [...except, 'userId']
       }
     })
 
     res.status(200).send({
       status: 'success',
       data: {
-        feed: allFeeds
+        feeds: allFeeds
       }
-    })    
+    })
   } catch (error) {
     console.log(error.message)
     res.status(500).send({

@@ -2,7 +2,7 @@ const { comment, user, feed } = require('../../models')
 const Joi = require('joi')
 
 const addComment = async (req, res) => {
-	try {
+  try {
     const { idUser } = req
     const data = req.body
     const schema = Joi.object({ comment: Joi.string().required() })
@@ -39,7 +39,7 @@ const addComment = async (req, res) => {
 
 const getComment = async (req, res) => {
   try {
-    const { idUser } = req
+    // const { idUser } = req
     const { feedId } = req.params
     const checkFeed = await feed.findOne({ where: { id: feedId } })
     if (!checkFeed) {

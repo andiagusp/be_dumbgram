@@ -82,4 +82,42 @@ const getFollowing = async (req, res) => {
   }
 }
 
-module.exports = { getFollower, getFollowing }
+const addFollower = async (req, res) => {
+  try {
+    const { idUser } = req
+    const data = req.params
+
+    const checkFollower = await follow.findOne({ where: { followingId: data.followingId } })
+    if (checkFollower) {
+      await follow.destroy({ where: { id: checkFollower.id } })
+      return res.status(400).send({
+        status: 'failed',
+        message: 'user sudah difollow'
+      })
+    }
+
+    const addFoll = await follow.create({
+      followerId: idUser,
+      followingId: data.id
+    })
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        follow: {
+          id: addFoll.id,
+          follower: idUser,
+          following: data.id
+        }
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error'
+    })
+  }
+}
+
+module.exports = { getFollower, getFollowing, addFollower }
