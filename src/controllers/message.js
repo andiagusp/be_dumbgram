@@ -1,7 +1,7 @@
-const { message, user } = require('../../models')
+const { message, user, sequelize } = require('../../models')
 const Joi = require('joi')
-const { Op } = require('sequelize')
-const except = ['createdAt', 'updatedAt']
+const { Op, QueryTypes } = require('sequelize')
+const except = ['updatedAt']
 
 const addMessage = async (req, res) => {
   try {
@@ -100,7 +100,8 @@ const getMessage = async (req, res) => {
     const chat = getMessage.map(m => ({
       id: m.id,
       message: m.message,
-      user: m.sender
+      createdAt: m.createdAt,
+      user: m.sender,
     }))
     res.status(200).send({
       status: 'success',
@@ -117,4 +118,68 @@ const getMessage = async (req, res) => {
   }
 }
 
-module.exports = { addMessage, getMessage }
+const getLastReceiveMessage = async (req, res) => {
+  try {
+    const { idUser } = req
+    
+    // const result = await sequelize.query(`
+    //   SELECT
+    //     messages.id, messages.senderMessageId, messages.receiverMessageId, messages.message,
+    //     sender.id, sender.fullName, sender.email, sender.username, sender.image
+    //     FROM messages
+    //     JOIN users as sender
+    //     ON messages.senderMessageId = sender.id
+    //     WHERE receiverMessageId = ${idUser}
+    //     AND messages.id
+    //     IN (SELECT MAX(messages.id) FROM messages GROUP BY senderMessageId )
+    //   `, {
+    //   type: QueryTypes.SELECT
+    // })
+    const last = await sequelize.query('SELECT MAX(id) as last FROM messages GROUP BY senderMessageId', { type: QueryTypes.SELECT})
+    const ress = last.map((l) => l.last)
+    console.log(ress)
+    const result = await message.findAll({
+      attributes: {
+        exclude: ['createdAt', 'updatedAt']
+      },
+      where: {
+        id: {
+          [Op.in]: ress
+        },
+        receiverMessageId: idUser
+      },
+      include: {
+        model: user,
+        as: 'sender',
+        attributes: ['id', 'fullName', 'username', 'image']
+      }
+    })
+    // const result = await sequelize.query(`
+    //   SELECT
+    //     messages.id, messages.senderMessageId, messages.receiverMessageId, messages.message,
+    //     sender.id, sender.fullName, sender.email, sender.username, sender.image
+    //   FROM (SELECT * FROM messages WHERE receiverMessageId = ${idUser}) as messages
+    //   JOIN users as sender
+    //   ON messages.senderMessageId = sender.id
+    //   WHERE messages.id
+    //   IN (SELECT MAX(id) FROM messages GROUP BY senderMessageId )
+    // `, {
+    //   type: QueryTypes.SELECT
+    // })
+    
+    return res.status(200).send({
+      status: 'success',
+      data: {
+        message: result
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error'
+    })
+  }
+}
+
+module.exports = { addMessage, getMessage, getLastReceiveMessage }

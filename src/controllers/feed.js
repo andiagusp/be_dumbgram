@@ -5,14 +5,23 @@ const except = ['createdAt', 'updatedAt', 'userId']
 
 const addFeed = async (req, res) => {
   try {
-    const data = req.body
+    const { caption } = req.body
     const { idUser } = req
+    let fileName = null
+
+    if (req.files) {
+      fileName = req.files.imageFile[0].filename
+    }
+
+    const input = {
+      caption, fileName
+    }
 
     const schema = Joi.object({
       fileName: Joi.string().required(),
       caption: Joi.string().optional().allow('')
     })
-    const { error } = schema.validate(data)
+    const { error } = schema.validate(input)
     if (error) {
       return res.status(400).send({
         status: 'failed',
@@ -20,7 +29,7 @@ const addFeed = async (req, res) => {
       })
     }
 
-    const resultPost = await feed.create({ ...data, userId: idUser })
+    const resultPost = await feed.create({ ...input, userId: idUser, like: 0 })
     const findFeed = await feed.findOne({
       where: {
         id: resultPost.id
@@ -54,14 +63,6 @@ const addFeed = async (req, res) => {
 const getFeedByFollow = async (req, res) => {
   try {
     const { idUser } = req
-    const { id } = req.params
-    const checkAccountPeople = await user.findOne({ where: { id: id } })
-    if (!checkAccountPeople) {
-      return res.status(404).send({
-        status: 'failed',
-        message: 'user not found'
-      })
-    }
 
     const getFollowing = await follow.findAll({
       attributes: ['followingId'],
@@ -126,4 +127,70 @@ const getAllFeed = async (req, res) => {
   }
 }
 
-module.exports = { addFeed, getFeedByFollow, getAllFeed }
+const getFeedPeople = async (req, res) => {
+  try {
+    const { id } = req.params
+    const feeds = await feed.findAll({
+      attributes: {
+        exclude: ['createdAt', 'updatedAt', 'userId']
+      },
+      include: {
+        model: user,
+        as: 'user',
+        attributes: {
+          exclude: ['createdAt', 'updatedAt', 'password', 'email']
+        }
+      },
+      where: {
+        userId: id
+      }
+    })
+    if (!feed) {
+      return res.status(404).send({
+        status: 'failed',
+        message: 'not found feed'
+      })
+    }
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        feeds: feeds
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error'
+    })
+  }
+}
+
+const getFeedLike = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const result = await feed.findOne({
+      attributes: ['id', 'like'],
+      where: {
+        id: id
+      }
+    })
+
+    return res.status(200).send({
+      status: 'success',
+      data: {
+        feed: result
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error'
+    })
+  }
+}
+
+module.exports = { addFeed, getFeedByFollow, getAllFeed, getFeedPeople, getFeedLike }

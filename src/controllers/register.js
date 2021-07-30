@@ -20,12 +20,18 @@ const registerUser = async (req, res) => {
 
     const schema = Joi.object({
       email: Joi.string().required().email().min(4),
+      fullName: Joi.string().required().min(1),
       username: Joi.string().required().min(4).trim(),
-      password: Joi.string().required().min(8).trim(),
-      fullName: Joi.string().required().min(1)
+      password: Joi.string().required().min(8).trim()
     })
-
     const { error, value } = schema.validate(data)
+    if (error) {
+      return res.status(400).send({
+        status: 'failed',
+        message: error.details[0].message
+      })
+    }
+
     const checkEmailUsername = await user.findOne({
       where: {
         [Op.or]: [
@@ -43,16 +49,11 @@ const registerUser = async (req, res) => {
       })
     }
 
-    if (error) {
-      return res.status(400).send({
-        status: 'failed',
-        error: error.details[0].message,
-        value
-      })
-    }
+    
 
     const dataUser = await user.create({
       ...data,
+      image: 'unknow.jpg',
       password: hashPassword
     })
     const token = jwt.sign({

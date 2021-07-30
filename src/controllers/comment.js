@@ -15,7 +15,7 @@ const addComment = async (req, res) => {
     }
 
     const postComment = await comment.create({
-      feedId: data.id_feed,
+      feedId: data.feedId,
       userId: idUser,
       comment: data.comment
     })
@@ -50,7 +50,7 @@ const getComment = async (req, res) => {
     }
 
     const comments = await comment.findAll({
-      attributes: ['id', 'comment'],
+      attributes: ['id', 'comment', 'createdAt'],
       where: {
         feedId: feedId
       },
@@ -74,4 +74,65 @@ const getComment = async (req, res) => {
   }
 }
 
-module.exports = { addComment, getComment }
+const getNotif = async (req, res) => {
+  try {
+    const { idUser } = req
+    const notifs = await feed.findAll({
+      attributes: {
+        exclude: ['updatedAt']
+      },
+      limit: 5,
+      where: {
+        userId: idUser
+      },
+      include: {
+        model: comment,
+        as: 'comment',
+        attributes: {
+          exclude: ['updatedAt']
+        },
+        limit: 5,
+        order: [['id', 'desc']],
+        include: {
+          model: user,
+          as: 'user',
+          attributes: ['id', 'fullName', 'username', 'image']
+        }
+      }
+    })
+
+    return res.status(200).send({
+      status: 'success',
+      data: {
+        notifs
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error'
+    })
+  }
+}
+
+const deleteComment = async (req, res) => {
+  try {
+    const { id } = req.params
+    await comment.destroy({ where: { id: id } })
+    return res.status(200).send({
+      status: 'success',
+      data: {
+        comment: id
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error'
+    })
+  }
+}
+
+module.exports = { addComment, getComment, getNotif, deleteComment }

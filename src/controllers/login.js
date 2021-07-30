@@ -17,20 +17,25 @@ const login = async (req, res) => {
     const { error } = schema.validate(data)
 
     if (error) {
-      return res.status(404).send({
+      return res.status(400).send({
         status: 'failed',
         message: error.details[0].message
       })
     }
 
-    const checkEmail = await user.findOne({ where: { email } })
-    const isValidPassword = await bcrypt.compare(password, checkEmail.password)
+    const checkEmail = await user.findOne({
+      attributes: ['id', 'fullName', 'username', 'email', 'image', 'password'],
+      where: { email }
+    })
     if (!checkEmail) {
-      return res.status(404).send({
+      res.status(404)
+      return res.send({
         status: 'failed',
         message: 'email or password incorrect'
       })
     }
+    const isValidPassword = await bcrypt.compare(password, checkEmail.password)
+    console.log(checkEmail)
     if (!isValidPassword) {
       return res.status(404).send({
         status: 'failed',
@@ -47,9 +52,11 @@ const login = async (req, res) => {
       status: 'success',
       data: {
         user: {
+          id: checkEmail.id,
           fullName: checkEmail.fullName,
           username: checkEmail.username,
           email: checkEmail.email,
+          image: checkEmail.image,
           token
         }
       }

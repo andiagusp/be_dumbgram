@@ -85,29 +85,40 @@ const getFollowing = async (req, res) => {
 const addFollower = async (req, res) => {
   try {
     const { idUser } = req
-    const data = req.params
+    const { id } = req.body
 
-    const checkFollower = await follow.findOne({ where: { followingId: data.followingId } })
-    if (checkFollower) {
-      await follow.destroy({ where: { id: checkFollower.id } })
-      return res.status(400).send({
-        status: 'failed',
-        message: 'user sudah difollow'
+    const checkFollow = await follow.findOne({
+      attributes: { exclude: ['createdAt', 'updatedAt'] } ,
+      where: {
+        followerId: idUser,
+        followingId: id
+      }
+    })
+
+    if (checkFollow) {
+      await follow.destroy({
+        where: {
+          followerId: idUser,
+          followingId: id
+        }
+      })
+      return res.status(200).send({
+        status: 'success',
+        message: 'success unfollow'
       })
     }
-
-    const addFoll = await follow.create({
+    const create = await follow.create({
       followerId: idUser,
-      followingId: data.id
+      followingId: id
     })
 
     res.status(200).send({
       status: 'success',
+       message: 'success follow',
       data: {
         follow: {
-          id: addFoll.id,
-          follower: idUser,
-          following: data.id
+          followerId: create.followerId,
+          followingId: create.followingId
         }
       }
     })

@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { user } = require('../../models')
 const Joi = require('joi')
 
@@ -36,7 +37,29 @@ const updateUser = async (req, res) => {
     const { id } = req.params
     const { idUser } = req
     const data = req.body
+    console.log(req.files)
+    let image = null
+    if (req.files.imageFile) {
+      console.log('cek')
+      image = req.files.imageFile[0].filename
+    } else if (!image) {
+      const result = await user.findOne({
+        attributes: ['id', 'image'],
+        where: {
+          id: idUser
+        }
+      })
+      image = result.image
+    }
 
+    if (data.username.includes(' ')) {
+      return res.status(400).send({
+        status: 'failed',
+        message: 'username not used white space'
+      })
+    }
+
+    console.log(data);
     if (+id !== +idUser) {
       return res.status(403).send({
         status: 'failed',
@@ -57,7 +80,7 @@ const updateUser = async (req, res) => {
       }
     })
     if (!detailUser) {
-      return res.status(400).send({
+      return res.status(404).send({
         status: 'failed',
         message: 'not found'
       })
@@ -76,10 +99,9 @@ const updateUser = async (req, res) => {
       })
     }
     const schema = Joi.object({
-      image: Joi.string(),
       bio: Joi.string()
     })
-    const { error } = schema.validate(data)
+    const { error } = schema.validate({ bio: data.bio })
 
     if (error) {
       return res.status(400).send({
@@ -88,7 +110,7 @@ const updateUser = async (req, res) => {
       })
     }
 
-    await user.update(data, { where: { id: idUser } })
+    await user.update({ ...data, image }, { where: { id: idUser } })
     const userUpdate = await user.findOne({
       attributes: {
         exclude: ['createdAt', 'updatedAt', 'password']
@@ -139,4 +161,68 @@ const deleteUser = async (req, res) => {
   }
 }
 
-module.exports = { getAllUser, updateUser, deleteUser }
+const getUserLogin = async (req, res) => {
+  try {
+    const { idUser } = req
+
+    const result = await user.findOne({
+      attributes: ['id', 'fullName', 'username', 'image', 'bio'],
+      where: {
+        id: idUser
+      }
+    })
+    if (!result) {
+      return res.status(404).send({
+        status: 'failed',
+        message: 'user not found'
+      })
+    }
+    
+    res.status(200).send({
+      status: 'success',
+      data: {
+        user: result
+      }
+    })
+  } catch (error) {
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error',
+      error: error.message
+    })
+  }
+}
+
+const getDetailUser = async (req, res) => {
+  try {
+    const { id } = req.params
+    const detail = await user.findOne({
+      attributes: ['id', 'fullName', 'username', 'image', 'bio'],
+      where: {
+        id: id
+      }
+    })
+
+    if (!detail) {
+      return res.status(404).send({
+        status: 'failed',
+        message: 'user not found'
+      })
+    }
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        user: detail
+      }
+    })
+  } catch (error) {
+    res.status(500).send({
+      status: 'failed',
+      message: 'server error',
+      error: error.message
+    })
+  }
+}
+
+module.exports = { getAllUser, updateUser, deleteUser, getUserLogin, getDetailUser }
